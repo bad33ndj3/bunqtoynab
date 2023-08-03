@@ -1,3 +1,4 @@
+// Package filter provides functions for filtering.
 package filter
 
 // Func is a function that filters T.

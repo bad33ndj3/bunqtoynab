@@ -1,3 +1,4 @@
+// Package bunq provides a client for the bunq API.
 package bunq
 
 import (
@@ -5,6 +6,7 @@ import (
 	"time"
 
 	"github.com/OGKevin/go-bunq/bunq"
+	"github.com/bad33ndj3/bunqtoynab/pkg/filter"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"go.uber.org/ratelimit"
@@ -14,8 +16,6 @@ const (
 	name   = "cli"
 	layout = "2006-01-02 15:04:05.000000"
 )
-
-var ErrUnknownPaymentType = errors.New("unknown payment type")
 
 type Client struct {
 	bunqClient *bunq.Client
@@ -43,7 +43,7 @@ func NewClient(ctx context.Context, apiKey string) (*Client, error) {
 
 func (c *Client) AllPayments(
 	accountID uint,
-	filters ...TransactionFilterFunc,
+	filters ...filter.Func[*Transaction],
 ) ([]*Transaction, error) {
 	var transactions []*Transaction
 
