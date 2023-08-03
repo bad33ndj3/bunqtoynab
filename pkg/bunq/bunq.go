@@ -18,8 +18,8 @@ const (
 )
 
 type Client struct {
-	bunqClient *bunq.Client
-	rt         ratelimit.Limiter
+	client *bunq.Client
+	rt     ratelimit.Limiter
 }
 
 func NewClient(ctx context.Context, apiKey string) (*Client, error) {
@@ -36,8 +36,8 @@ func NewClient(ctx context.Context, apiKey string) (*Client, error) {
 	}
 
 	return &Client{
-		bunqClient: bunqClient,
-		rt:         ratelimit.New(1),
+		client: bunqClient,
+		rt:     ratelimit.New(1),
 	}, nil
 }
 
@@ -49,7 +49,7 @@ func (c *Client) AllPayments(
 
 	c.rt.Take()
 
-	allPaymentResponse, err := c.bunqClient.PaymentService.GetAllPayment(accountID)
+	allPaymentResponse, err := c.client.PaymentService.GetAllPayment(accountID)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting all payments")
 	}
@@ -79,8 +79,8 @@ func (c *Client) AllPayments(
 			PayeeIBAN:   payment.CounterpartyAlias.IBAN,
 		}
 
-		for _, filter := range filters {
-			if filter(transaction) {
+		for _, f := range filters {
+			if f(transaction) {
 				transactions = append(transactions, transaction)
 			}
 		}
@@ -102,7 +102,7 @@ func (c *Client) AllAccounts() ([]*Account, error) {
 	var accounts []*Account
 	c.rt.Take()
 
-	savingAccounts, err := c.bunqClient.AccountService.GetAllMonetaryAccountSaving()
+	savingAccounts, err := c.client.AccountService.GetAllMonetaryAccountSaving()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting all saving accounts")
 	}
@@ -125,7 +125,7 @@ func (c *Client) AllAccounts() ([]*Account, error) {
 	}
 
 	c.rt.Take()
-	bankAccounts, err := c.bunqClient.AccountService.GetAllMonetaryAccountBank()
+	bankAccounts, err := c.client.AccountService.GetAllMonetaryAccountBank()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting all bank accounts")
 	}
