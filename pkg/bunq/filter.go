@@ -1,17 +1,9 @@
 package bunq
 
-// TransactionFilterFunc is a function that filters transactions.
-// If the function returns true, the transaction is included in the result.
-type TransactionFilterFunc func(transaction *Transaction) bool
-
-func InverseFilterFunc(filter TransactionFilterFunc) TransactionFilterFunc {
-	return func(transaction *Transaction) bool {
-		return !filter(transaction)
-	}
-}
+import "github.com/bad33ndj3/bunqtoynab/pkg/filter"
 
 // WithPaymentTypes returns a TransactionFilterFunc that filters out transactions without the given PaymentType's.
-func WithPaymentTypes(types ...PaymentType) TransactionFilterFunc {
+func WithPaymentTypes(types ...PaymentType) filter.Func[*Transaction] {
 	return func(transaction *Transaction) bool {
 		for _, t := range types {
 			if transaction.Type == t {
@@ -23,8 +15,8 @@ func WithPaymentTypes(types ...PaymentType) TransactionFilterFunc {
 	}
 }
 
-// WithPaymentSubTypes returns a TransactionFilterFunc that filters out transactions without the given PaymentSubType's.
-func WithPaymentSubTypes(types ...PaymentSubType) TransactionFilterFunc {
+// WithPaymentSubTypes returns a filter.FilterFunc[] that filters out transactions without the given PaymentSubType's.
+func WithPaymentSubTypes(types ...PaymentSubType) filter.Func[*Transaction] {
 	return func(transaction *Transaction) bool {
 		for _, t := range types {
 			if transaction.SubType == t {
@@ -42,9 +34,9 @@ type CombinedPaymentType struct {
 	PaymentSubTypes []PaymentSubType
 }
 
-// WithCombinedPaymentTypes returns a TransactionFilterFunc that filters out transactions
+// WithCombinedPaymentTypes returns a filter.FilterFunc[] that filters out transactions
 // without the given CombinedPaymentType's.
-func WithCombinedPaymentTypes(types ...CombinedPaymentType) TransactionFilterFunc {
+func WithCombinedPaymentTypes(types ...CombinedPaymentType) filter.Func[*Transaction] {
 	return func(transaction *Transaction) bool {
 		for _, t := range types {
 			if WithPaymentTypes(t.PaymentType)(transaction) {
@@ -60,7 +52,7 @@ func WithCombinedPaymentTypes(types ...CombinedPaymentType) TransactionFilterFun
 	}
 }
 
-func WithPayeeIBAN(iban ...string) TransactionFilterFunc {
+func WithPayeeIBAN(iban ...string) filter.Func[*Transaction] {
 	return func(transaction *Transaction) bool {
 		for _, i := range iban {
 			if transaction.PayeeIBAN == i {

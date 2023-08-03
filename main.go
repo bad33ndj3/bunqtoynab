@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/bad33ndj3/bunqtoynab/pkg/bunq"
+	"github.com/bad33ndj3/bunqtoynab/pkg/filter"
 	"github.com/brunomvsouza/ynab.go"
 	"github.com/brunomvsouza/ynab.go/api"
 	"github.com/brunomvsouza/ynab.go/api/transaction"
@@ -57,7 +58,7 @@ func (s App) ImportAsOne(budgetID string, accountName string) error {
 		return errors.Wrap(err, "getting all accounts")
 	}
 
-	withoutInternalTransactions := bunq.InverseFilterFunc(
+	withoutInternalTransactions := filter.Inverse(
 		bunq.WithPayeeIBAN(bunq.AccountsIBAN(accounts)...),
 	)
 
