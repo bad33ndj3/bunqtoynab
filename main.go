@@ -1,6 +1,10 @@
 package main
 
 import (
+	"context"
+	"log"
+	"os"
+
 	"github.com/bad33ndj3/bunqtoynab/pkg/bunq"
 	"github.com/brunomvsouza/ynab.go"
 	"github.com/brunomvsouza/ynab.go/api"
@@ -8,9 +12,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
-	"gopkg.in/ffmt.v1"
-	"log"
-	"os"
 )
 
 func main() {
@@ -21,10 +22,12 @@ func main() {
 
 	ynabKey := os.Getenv("YNAB_KEY")
 	ynabBudgetID := os.Getenv("YNAB_BUDGET_ID")
+	ynabAccountName := os.Getenv("YNAB_ACCOUNT_NAME")
 	bunqKey := os.Getenv("BUNQ_KEY")
 
 	ynabClient := ynab.NewClient(ynabKey)
-	bunqClient, err := bunq.NewClient(bunqKey)
+
+	bunqClient, err := bunq.NewClient(context.Background(), bunqKey)
 	if err != nil {
 		log.Fatalf("error creating bunq client: %v", err)
 	}
@@ -34,7 +37,7 @@ func main() {
 		ynabClient: ynabClient,
 	}
 
-	err = app.Run(ynabBudgetID)
+	err = app.ImportAsOne(ynabBudgetID, ynabAccountName)
 	if err != nil {
 		log.Fatalf("error running program: %v", err)
 	}
@@ -45,57 +48,92 @@ type App struct {
 	ynabClient ynab.ClientServicer
 }
 
-func (s App) Run(budgetID string) error {
+// ImportAsOne imports all transactions from bunq to ynab as if they were all from the same account.
+// This is useful if you have multiple bunq accounts and want to import them all as one ynab account.
+// To make this less confusing, all internal bunq transactions are ignored.
+func (s App) ImportAsOne(budgetID string, accountName string) error {
 	accounts, err := s.bunqClient.AllAccounts()
 	if err != nil {
 		return errors.Wrap(err, "getting all accounts")
 	}
 
+	withoutInternalTransactions := bunq.InverseFilterFunc(
+		bunq.WithPayeeIBAN(bunq.AccountsIBAN(accounts)...),
+	)
+
 	var transactions []*bunq.Transaction
 	for _, acc := range accounts {
-		trans, err := s.bunqClient.AllPayments(uint(acc.ID))
+		trans, err := s.bunqClient.AllPayments(uint(acc.ID), withoutInternalTransactions)
 		if err != nil {
 			return errors.Wrap(err, "getting all payments")
 		}
+
 		transactions = append(transactions, trans...)
+	}
+
+	ynabAccountsResp, err := s.ynabClient.Account().GetAccounts(budgetID, nil)
+	if err != nil {
+		return errors.Wrap(err, "getting ynab accounts")
+	}
+
+	var accountID string
+	for _, acc := range ynabAccountsResp.Accounts {
+		if acc.Name == accountName {
+			accountID = acc.ID
+		}
 	}
 
 	ynabTransactions := make([]transaction.PayloadTransaction, len(transactions))
 	for i, t := range transactions {
-		ynabTransactions[i] = TransformBunqToYNABPayload(t)
+		ynabTransactions[i] = TransformBunqToYNABPayload(t, accountID)
 	}
 
-	// todo: this implementation would add all existing transactions to one account
-	ffmt.Pjson(ynabTransactions)
-
-	//_, err = s.ynabClient.Transaction().CreateTransactions(budgetID, ynabTransactions)
-	//if err != nil {
-	//	return errors.Wrap(err, "creating transactions")
-	//}
+	_, err = s.ynabClient.Transaction().CreateTransactions(budgetID, ynabTransactions)
+	if err != nil {
+		return errors.Wrap(err, "creating transactions")
+	}
 
 	return nil
 }
 
-func TransformBunqToYNABPayload(t *bunq.Transaction) transaction.PayloadTransaction {
+func TransformBunqToYNABPayload(
+	t *bunq.Transaction,
+	accountID string,
+) transaction.PayloadTransaction {
 	importID := importID(t)
-	return transaction.PayloadTransaction{
-		AccountID: "",
-		Date:      api.Date{Time: t.Date},
-		Amount:    t.Amount.Mul(decimal.NewFromInt(1000)).IntPart(),
-		PayeeName: &t.Payee,
-		Memo:      &t.Description,
-		FlagColor: nil,
-		ImportID:  &importID,
+
+	const maxPayeeLenght = 6
+
+	var shortPayee string
+	if len(t.Payee) > maxPayeeLenght {
+		shortPayee = t.Payee[:maxPayeeLenght]
+	} else {
+		shortPayee = t.Payee
 	}
 
+	description := shortPayee + ": " + t.Description
+
+	return transaction.PayloadTransaction{
+		ID:         "",
+		AccountID:  accountID,
+		Date:       api.Date{Time: t.Date},
+		Amount:     t.Amount.Mul(decimal.NewFromInt(1000)).IntPart(),
+		Memo:       &description,
+		Cleared:    transaction.ClearingStatusUncleared,
+		Approved:   false,
+		PayeeID:    nil,
+		PayeeName:  &t.Payee,
+		CategoryID: nil,
+		FlagColor:  nil,
+		ImportID:   &importID,
+	}
 }
 
-// YNAB:[milliunit_amount]:[iso_date]:[occurrence]'. For example,
-// a transaction dated 2015-12-30 in the amount of -$294.23 USD
-// would have an import_id of 'YNAB:-294230:2015-12-30:1'.
-// If a second transaction on the same account was imported and
-// had the same date and same amount,
-// its import_id would be 'YNAB:-294230:2015-12-30:2'.
+// importID generates an importID for a transaction.
+// This is used by YNAB to prevent duplicate imports.
+// If you want to import the same transaction multiple times, you can change the importIteration.
 func importID(t *bunq.Transaction) string {
-	return "YNAB:" + t.Amount.String() + ":" + t.Date.Format("2006-01-02") + ":1"
+	const importIteration = "1"
+
+	return "YNAB:" + t.Amount.String() + ":" + t.Date.Format("2006-01-02") + ":" + importIteration
 }
