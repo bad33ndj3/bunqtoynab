@@ -1,11 +1,14 @@
 package bunq
 
+// PaymentType is the type of a payment.
 type PaymentType string
 
+// String returns the string representation of a PaymentType.
 func (p PaymentType) String() string {
 	return string(p)
 }
 
+// PaymentTypeFromString returns a PaymentType from a string.
 func PaymentTypeFromString(src string) PaymentType {
 	switch src {
 	case string(PaymentTypePayment):
@@ -29,24 +32,38 @@ func PaymentTypeFromString(src string) PaymentType {
 	}
 }
 
+// PaymentType is a type that holds different methods of payments.
 const (
-	PaymentTypeUnknown    PaymentType = ""
-	PaymentTypePayment    PaymentType = "PAYMENT"
-	PaymentTypeIDEAL      PaymentType = "IDEAL"
-	PaymentTypeBUNQ       PaymentType = "BUNQ"
+	// PaymentTypeUnknown is an unknown PaymentType.
+	PaymentTypeUnknown PaymentType = ""
+	// PaymentTypePayment represents the general payment type.
+	PaymentTypePayment PaymentType = "PAYMENT"
+	// PaymentTypeIDEAL - payment through IDEAL system.
+	PaymentTypeIDEAL PaymentType = "IDEAL"
+	// PaymentTypeBUNQ - payment through BUNQ system.
+	PaymentTypeBUNQ PaymentType = "BUNQ"
+	// PaymentTypeMASTERCARD - payment with MASTERCARD.
 	PaymentTypeMASTERCARD PaymentType = "MASTERCARD"
-	PaymentTypeSWIFT      PaymentType = "SWIFT"
-	PaymentTypeSAVINGS    PaymentType = "SAVINGS"
-	PaymentTypePAYDAY     PaymentType = "PAYDAY"
-	PaymentTypeINTEREST   PaymentType = "INTEREST"
+	// PaymentTypeSWIFT - payment through SWIFT system.
+	PaymentTypeSWIFT PaymentType = "SWIFT"
+	// PaymentTypeSAVINGS - savings as a form of 'payment'.
+	PaymentTypeSAVINGS PaymentType = "SAVINGS"
+	// PaymentTypePAYDAY - payday loan payment.
+	PaymentTypePAYDAY PaymentType = "PAYDAY"
+	// PaymentTypeINTEREST - interest payment.
+	PaymentTypeINTEREST PaymentType = "INTEREST"
 )
 
+// PaymentSubType is a subcategory of PaymentType.
 type PaymentSubType string
 
+// String converts a PaymentSubType to a string.
 func (p PaymentSubType) String() string {
 	return string(p)
 }
 
+// PaymentSubTypeFromString converts a string to a PaymentSubType.
+// If the string doesn't match known sub-types, it returns PaymentSubTypeUnknown.
 func PaymentSubTypeFromString(src string) PaymentSubType {
 	switch src {
 	case string(PaymentSubTypePayment):
@@ -56,24 +73,31 @@ func PaymentSubTypeFromString(src string) PaymentSubType {
 	}
 }
 
+// These are the known PaymentSubTypes.
 const (
 	PaymentSubTypeUnknown PaymentSubType = ""
 	PaymentSubTypePayment PaymentSubType = "PAYMENT"
 )
 
+// AccountType represents different account types.
 type AccountType string
 
 const (
-	AccountTypeBank   AccountType = "BANK"
+	// AccountTypeBank represents a bank account.
+	AccountTypeBank AccountType = "BANK"
+	// AccountTypeSaving represents a savings account.
 	AccountTypeSaving AccountType = "SAVING"
 )
 
+// AccountStatus represents the status of an account.
 type AccountStatus string
 
+// String converts an AccountStatus to a string.
 func (s AccountStatus) String() string {
 	return string(s)
 }
 
 const (
+	// AccountStatusActive represents an active account.
 	AccountStatusActive AccountStatus = "ACTIVE"
 )
