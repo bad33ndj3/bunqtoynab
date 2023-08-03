@@ -11,11 +11,13 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+// App is the main application.
 type App struct {
 	bunqClient *bunq.Client
 	ynabClient ynab.ClientServicer
 }
 
+// NewApp creates a new App.
 func NewApp(bunqClient *bunq.Client, ynabClient ynab.ClientServicer) *App {
 	return &App{bunqClient: bunqClient, ynabClient: ynabClient}
 }
@@ -68,6 +70,7 @@ func (s App) ImportAsOne(budgetID string, accountName string) error {
 	return nil
 }
 
+// TransformBunqToYNABPayload transforms a bunq transaction to a YNAB transaction payload.
 func TransformBunqToYNABPayload(
 	t *bunq.Transaction,
 	accountID string,

@@ -52,6 +52,7 @@ func WithCombinedPaymentTypes(types ...CombinedPaymentType) filter.Func[*Transac
 	}
 }
 
+// WithPayeeIBAN returns a filter.FilterFunc[] that filters out transactions without the given IBAN's.
 func WithPayeeIBAN(iban ...string) filter.Func[*Transaction] {
 	return func(transaction *Transaction) bool {
 		for _, i := range iban {

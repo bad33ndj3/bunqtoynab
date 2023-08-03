@@ -17,11 +17,13 @@ const (
 	layout = "2006-01-02 15:04:05.000000"
 )
 
+// Client is a client for the bunq API.
 type Client struct {
 	client *bunq.Client
 	rt     ratelimit.Limiter
 }
 
+// NewClient creates a new Client.
 func NewClient(ctx context.Context, apiKey string) (*Client, error) {
 	key, err := bunq.CreateNewKeyPair()
 	if err != nil {
@@ -41,6 +43,7 @@ func NewClient(ctx context.Context, apiKey string) (*Client, error) {
 	}, nil
 }
 
+// AllPayments returns all payments for the given account.
 func (c *Client) AllPayments(
 	accountID uint,
 	filters ...filter.Func[*Transaction],
@@ -89,6 +92,7 @@ func (c *Client) AllPayments(
 	return transactions, nil
 }
 
+// AccountsIBAN returns the IBANs of the given accounts.
 func AccountsIBAN(accounts []*Account) []string {
 	var ibans []string
 	for _, account := range accounts {
@@ -98,6 +102,7 @@ func AccountsIBAN(accounts []*Account) []string {
 	return ibans
 }
 
+// AllAccounts returns all accounts.
 func (c *Client) AllAccounts() ([]*Account, error) {
 	var accounts []*Account
 	c.rt.Take()
@@ -149,6 +154,7 @@ func (c *Client) AllAccounts() ([]*Account, error) {
 	return accounts, nil
 }
 
+// Account returns the account with the given IBAN.
 type Account struct {
 	ID          int
 	Description string
@@ -156,6 +162,7 @@ type Account struct {
 	IBAN        string
 }
 
+// Transaction represents a transaction.
 type Transaction struct {
 	ID          int
 	Description string
