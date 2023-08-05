@@ -24,7 +24,7 @@ type Client struct {
 }
 
 // NewClient creates a new Client.
-func NewClient(ctx context.Context, apiKey string) (*Client, error) {
+func NewClient(ctx context.Context, apiKey string, rt ratelimit.Limiter) (*Client, error) {
 	key, err := bunq.CreateNewKeyPair()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating new key pair")
@@ -39,7 +39,7 @@ func NewClient(ctx context.Context, apiKey string) (*Client, error) {
 
 	return &Client{
 		client: bunqClient,
-		rt:     ratelimit.New(1),
+		rt:     rt,
 	}, nil
 }
 
