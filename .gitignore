@@ -2,3 +2,11 @@
 .idea
 *.iml
 coverage.txt
+.nimbella
+.deployed
+__deployer__.zip
+__pycache__/
+node_modules
+package-lock.json
+.DS_Store
+.op

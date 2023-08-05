@@ -9,6 +9,7 @@ import (
 	"github.com/bad33ndj3/bunqtoynab/pkg/bunq"
 	"github.com/brunomvsouza/ynab.go"
 	"github.com/joho/godotenv"
+	"go.uber.org/ratelimit"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 
 	ynabClient := ynab.NewClient(ynabKey)
 
-	bunqClient, err := bunq.NewClient(context.Background(), bunqKey)
+	bunqClient, err := bunq.NewClient(context.Background(), bunqKey, ratelimit.New(1))
 	if err != nil {
 		log.Fatalf("error creating bunq client: %v", err)
 	}
