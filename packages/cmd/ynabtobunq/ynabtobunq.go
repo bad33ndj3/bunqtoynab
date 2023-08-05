@@ -9,16 +9,10 @@ import (
 	"github.com/bad33ndj3/bunqtoynab/pkg/app"
 	"github.com/bad33ndj3/bunqtoynab/pkg/bunq"
 	"github.com/brunomvsouza/ynab.go"
-	"github.com/joho/godotenv"
 	"go.uber.org/ratelimit"
 )
 
-func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
+func Main(_ map[string]interface{}) map[string]interface{} {
 	ynabKey := os.Getenv("YNAB_KEY")
 	ynabBudgetID := os.Getenv("YNAB_BUDGET_ID")
 	ynabAccountName := os.Getenv("YNAB_ACCOUNT_NAME")
@@ -29,12 +23,15 @@ func main() {
 	rt := ratelimit.New(3, ratelimit.Per(time.Second*3))
 	bunqClient, err := bunq.NewClient(context.Background(), bunqKey, rt)
 	if err != nil {
-		log.Fatalf("error creating bunq client: %v", err)
+		log.Panicf("error creating bunq client: %v", err)
 	}
 
 	a := app.NewApp(bunqClient, ynabClient)
 	err = a.ImportAsOne(ynabBudgetID, ynabAccountName)
 	if err != nil {
-		log.Fatalf("error running program: %v", err)
+		log.Panicf("error running program: %v", err)
 	}
+
+	log.Println("done")
+	return map[string]interface{}{}
 }

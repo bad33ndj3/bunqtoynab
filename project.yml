@@ -1,0 +1,17 @@
+environment:
+  BUNQ_KEY: ${BUNQ_KEY}
+  BUNQ_USER_ID: ${BUNQ_USER_ID}
+  YNAB_KEY: ${YNAB_KEY}
+  YNAB_BUDGET_ID: ${YNAB_BUDGET_ID}
+  YNAB_ACCOUNT_NAME: ${YNAB_ACCOUNT_NAME}
+packages:
+    - name: cmd
+      functions:
+        - name: ynabtobunq
+          runtime: go:1.20
+          web: false
+          triggers:
+            - name: 4-times-a-day
+              sourceType: scheduler
+              sourceDetails:
+                cron: "0 */6 * * *"
